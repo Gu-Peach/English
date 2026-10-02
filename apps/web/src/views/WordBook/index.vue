@@ -107,6 +107,10 @@ const query = ref<WordQuery>({
 const searchWord = () => {
   query.value.page = 1; //重置一下页数
   getList(); //重新获取列表
+  getList(); //重新获取列表
+  getList(); //重新获取列表
+  getList(); //重新获取列表
+  getList(); //重新获取列表
 };
 
 const getList = async () => {
