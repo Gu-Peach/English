@@ -28,8 +28,13 @@ serverApi.interceptors.response.use(
     return res.data;
   },
   async (error) => {
+    if (error.code === "ERR_NETWORK") {
+      ElMessage.error("网络错误，请检查网络连接");
+      return Promise.reject(error);
+    }
     if (error.response.status !== 401) {
       //其他code码就直接抛出异常
+      ElMessage.error("服务器异常，请稍后再试");
       return Promise.reject(error);
     }
     //下面的逻辑就是处理401的情况了
@@ -60,6 +65,7 @@ serverApi.interceptors.response.use(
         userStore.updateToken(newToken.data);
       } else {
         userStore.logout(); //清空user
+        ElMessage.error("登录已过期，请重新登录");
         router.replace("/"); //跳转到首页
         return Promise.reject(error);
       }
