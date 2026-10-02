@@ -22,3 +22,7 @@ pnpm-debug.log*
 .idea/
 *.suo
 *.sw?
+
+# 个人笔记（不入库）
+笔记.md
+问题.md
