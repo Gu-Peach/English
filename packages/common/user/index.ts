@@ -27,8 +27,8 @@ export type UserUpdate = Pick<
   User,
   | "name"
   | "email"
-  | "phone"
   | "address"
+  | "avatar"
   | "bio"
   | "isTimingTask"
   | "timingTaskTime"

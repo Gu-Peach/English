@@ -17,8 +17,13 @@ export const useLogin = () => {
     const hide = () => {
         isShowLogin.value = false
     }
+    const logout = () => {
+        userStore.logout()
+        hide()
+    }
     return {
         login,
-        hide
+        hide,
+        logout,
     }
 }

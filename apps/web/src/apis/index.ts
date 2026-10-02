@@ -1,8 +1,14 @@
 import axios from "axios";
+import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/user"; //pinia user的
 import router from "@/router"; //路由
 import { refreshTokenApi } from "./auth"; //刷新token接口
 export const timeout = 50000;
+// Avatar paths returned by the server are relative to the object-storage host.
+// Override this for a non-local MinIO deployment with VITE_UPLOAD_URL.
+export const uploadUrl = (
+  import.meta.env.VITE_UPLOAD_URL || "http://localhost:9000"
+).replace(/\/+$/, "");
 //server服务器接口
 export const serverApi = axios.create({
   baseURL: "/api/v1",
@@ -32,7 +38,7 @@ serverApi.interceptors.response.use(
       ElMessage.error("网络错误，请检查网络连接");
       return Promise.reject(error);
     }
-    if (error.response.status !== 401) {
+    if (!error.response || error.response.status !== 401) {
       //其他code码就直接抛出异常
       ElMessage.error("服务器异常，请稍后再试");
       return Promise.reject(error);

@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ResponseModule } from './response/response.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MinioModule } from './minio/minio.module';
 @Global() // 全局模块，可以在任何地方注入
 @Module({
   providers: [SharedService],
@@ -23,6 +24,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         signOptions: { expiresIn: 10 }, //10秒过期 方便测试
       }),
     }),
+    MinioModule,
   ],
 })
 export class SharedModule {}
