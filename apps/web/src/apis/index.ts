@@ -7,7 +7,7 @@ export const timeout = 50000;
 // Avatar paths returned by the server are relative to the object-storage host.
 // Override this for a non-local MinIO deployment with VITE_UPLOAD_URL.
 export const uploadUrl = (
-  import.meta.env.VITE_UPLOAD_URL || "http://localhost:9000"
+  import.meta.env.VITE_UPLOAD_URL || "http://127.0.0.1:9100"
 ).replace(/\/+$/, "");
 //server服务器接口
 export const serverApi = axios.create({

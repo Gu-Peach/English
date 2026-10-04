@@ -176,7 +176,7 @@ export class UserService {
         avatar: createUserDto.avatar,
         bio: createUserDto.bio,
         isTimingTask: createUserDto.isTimingTask,
-        timingTaskTime: createUserDto.timingTaskTime,
+        timingTaskTime: createUserDto.timingTaskTime ?? '00:00:00',
       },
       select: updateUserSelect,
     });
