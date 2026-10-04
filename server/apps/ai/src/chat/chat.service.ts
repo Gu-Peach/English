@@ -1,5 +1,10 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { createDeepSeek, createCheckpoint } from '../llm/llm.config';
+import {
+  createDeepSeek,
+  createCheckpoint,
+  createBochaSearch,
+  createDeepSeekReasoner,
+} from '../llm/llm.config';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { ChatRoleType, ChatDto } from '@en/common/chat';
 import type { AIMessageChunk, ReactAgent } from 'langchain';
@@ -10,33 +15,36 @@ import { ResponseService } from '@libs/shared';
 export class ChatService implements OnModuleInit {
   constructor(private readonly responseService: ResponseService) {}
   private checkpointer: PostgresSaver;
-  private agents: Map<ChatRoleType, ReactAgent> = new Map();
   async onModuleInit() {
-    //1.初始化这个checkpoint
     this.checkpointer = await createCheckpoint(); //幂等性
-    //2.创建多个Agent
-    for (const mode of chatMode) {
-      const agent = createAgent({
-        model: createDeepSeek(), //模型
-        systemPrompt: mode.prompt, //系统提示词
-        checkpointer: this.checkpointer, //检查点
-      });
-      this.agents.set(mode.role, agent); //存入map
-    }
   }
+  async streamCompletion(createChatDto: ChatDto) {
+    let model = createDeepSeek(); //普通模型
+    if (createChatDto.deepThink) {
+      model = createDeepSeekReasoner(); //深度思考模型
+    }
 
-  streamCompletion(createChatDto: ChatDto) {
-    //role->normal userId->123 content->你好
-    //1.通过role读取对应的Agent
-    const agent = this.agents.get(createChatDto.role);
-    if (!agent) {
+    const findMode = chatMode.find((item) => item.role === createChatDto.role);
+    if (!findMode) {
       throw new Error('模式不存在');
     }
-    //2.组装消息格式
+
+    let prompt = findMode.prompt;
+    const content = createChatDto.content;
+    if (createChatDto.webSearch) {
+      const webSearchPrompt = await createBochaSearch(createChatDto.content);
+      prompt += `请根据以下搜索结果回答问题：${webSearchPrompt}(并且返回你参考的网站名称)，用户问题：${createChatDto.content}`;
+    }
+    const agent = createAgent({
+      model: model, //模型
+      systemPrompt: prompt, //系统提示词
+      checkpointer: this.checkpointer, //检查点
+    });
+    //3.组装消息格式
     const id = `${createChatDto.userId}-${createChatDto.role}`;
     const stream = agent.stream(
       {
-        messages: [{ role: 'human', content: createChatDto.content }],
+        messages: [{ role: 'human', content }],
       },
       {
         configurable: { thread_id: id }, //用于做会话隔离 + 历史记录存储
@@ -56,6 +64,7 @@ export class ChatService implements OnModuleInit {
       list.map((item) => ({
         content: item.content,
         role: item.type,
+        reasoning: item.additional_kwargs?.reasoning_content,
       })),
     );
   }
