@@ -69,8 +69,15 @@
           type="textarea"
           :rows="2"
           v-model="message"
-          placeholder="请输入内容"
+          :placeholder="isRecording ? '正在聆听...' : '请输入内容'"
         />
+        <el-button
+          class="ml-2"
+          :type="isRecording ? 'danger' : 'success'"
+          @click="toggleVoice"
+        >
+          {{ isRecording ? "停止" : "🎤" }}
+        </el-button>
         <el-button
           class="ml-2"
           :icon="Position"
@@ -88,6 +95,7 @@ import { Position } from "@element-plus/icons-vue";
 import type { ChatMessageList } from "@en/common/chat";
 import { marked } from "marked";
 import "@/assets/css/deep-seek.css";
+import { useVoiceToText } from "@/hooks/useVoiceToText";
 const emits = defineEmits(["onSendMessage"]);
 const chatRef = useTemplateRef<HTMLDivElement>("chatRef"); //读取DOM元素
 const props = defineProps<{
@@ -96,6 +104,20 @@ const props = defineProps<{
 const deepThink = ref(false); //深度思考
 const webSearch = ref(false); //联网搜索
 const message = ref<string>(""); //发送的内容
+//语音转文字
+const { isRecording, start, stop } = useVoiceToText({
+  lang: "zh-CN",
+  continuous: true,
+});
+const toggleVoice = () => {
+  if (isRecording.value) {
+    stop(); //停止识别
+  } else {
+    start((text) => {
+      message.value = text; //识别结果实时填入输入框
+    });
+  }
+};
 //发送消息
 const sendMessage = () => {
   if (!message.value) return;
