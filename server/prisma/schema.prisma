@@ -33,7 +33,7 @@ model User {
   avatar          String? // 头像
   bio             String? // 签名  第七集新增字段
   isTimingTask    Boolean          @default(false) // 是否开启定时任务 第七集新增字段
-  timingTaskTime  String           @default("00:00:00") //定时任务时间默认晚上0点开始，每隔24小时执行一次 第七集新增字段
+  timingTaskTime  String           @default("00:00:00") //定时任务时间默认晚上0点开始，每隔24小时执行 第七集新增字段
   wordNumber      Int              @default(0) // 单词数量
   dayNumber       Int              @default(0) // 打卡天数
   createdAt       DateTime         @default(now()) // 创建时间
@@ -42,6 +42,93 @@ model User {
   wordBookRecords WordBookRecord[]
   paymentRecords  PaymentRecord[]
   courseRecords   CourseRecord[]
+  visitors        Visitor[] //User别忘记关联
+}
+
+//访客表(UV) 下面五个表都是新增的
+model Visitor {
+  id                 String             @id @default(cuid()) // 访客ID
+  anonymousId        String             @unique // 匿名ID
+  userId             String?            // 用户ID
+  user               User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime           @default(now()) // 创建时间
+  updatedAt          DateTime           @updatedAt // 更新时间
+  browser            String? // 浏览器信息
+  os                 String? // 操作系统信息
+  device             String? // 设备信息
+  pageViews          PageView[]
+  trackEvents        TrackEvent[]
+  performanceEntries PerformanceEntry[]
+  errorEntries       ErrorEntry[]
+
+  @@index([userId])
+  @@index([anonymousId])
+}
+
+//pv表
+model PageView {
+  id        String   @id @default(cuid()) // pvID
+  visitorId String // 访客ID
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  url       String // 页面URL
+  referrer  String? // 来源URL
+  path      String // 页面路径
+  createdAt DateTime @default(now()) // 创建时间
+  updatedAt DateTime @updatedAt // 更新时间
+
+  @@index([visitorId, createdAt])
+  @@index([path, createdAt])
+}
+
+//用户行为表
+model TrackEvent {
+  id        String   @id @default(cuid()) // 行为ID
+  visitorId String // 访客ID
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  event     String // 事件类型
+  payload   Json? // 事件数据
+  url       String? // 页面URL
+  createdAt DateTime @default(now()) // 创建时间
+  updatedAt DateTime @updatedAt // 更新时间
+
+  @@index([visitorId, createdAt])
+  @@index([event, createdAt])
+}
+
+//性能指标
+model PerformanceEntry {
+  id        String   @id @default(cuid()) // 性能指标ID
+  visitorId String // 访客ID
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  fp        Float? // FP
+  fcp       Float? // FCP
+  lcp       Float? // LCP
+  inp       Float? // INP
+  cls       Float? // CLS
+  createdAt DateTime @default(now()) // 创建时间
+  updatedAt DateTime @updatedAt // 更新时间
+
+  @@index([fp, createdAt])
+  @@index([fcp, createdAt])
+  @@index([lcp, createdAt])
+  @@index([inp, createdAt])
+  @@index([cls, createdAt])
+  @@index([fp, fcp, lcp, inp, cls, createdAt])
+}
+
+model ErrorEntry {
+  id        String   @id @default(cuid()) // 错误指标ID
+  visitorId String // 访客ID
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  error     String // 错误类型 js |promise
+  message   String? // 错误信息
+  stack     String? // 错误堆栈
+  url       String? // 页面URL
+  createdAt DateTime @default(now()) // 创建时间
+  updatedAt DateTime @updatedAt // 更新时间
+
+  @@index([visitorId, createdAt])
+  @@index([error, createdAt])
 }
 
 //记录已操作的单词
