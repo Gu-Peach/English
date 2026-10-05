@@ -42,6 +42,10 @@ export const useUserStore = defineStore(
         avatar: user.value!.avatar,
       };
     });
+    //更新单词数量（学习界面保存后同步 Header 显示）
+    const updateUserWordNumber = (wordNumber: number) => {
+      user.value!.wordNumber = wordNumber;
+    };
     //退出登录
     const logout = () => {
       user.value = null;
@@ -56,6 +60,7 @@ export const useUserStore = defineStore(
       updateToken,
       updateUser,
       getUpdateUserInfo,
+      updateUserWordNumber,
     };
   },
   { persist: true },

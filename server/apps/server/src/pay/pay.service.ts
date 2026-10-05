@@ -50,7 +50,7 @@ export class PayService {
         },
       });
       //2.支付宝SDK发起支付生成url
-      const dateTime = dayjs().add(1, 'minute'); //当前的时间增加了一分钟 为了测试我弄的快一点
+      const dateTime = dayjs().add(15, 'minute'); //调试期放宽过期时间，避免扫码来不及显示已失效 //当前的时间增加了一分钟 为了测试我弄的快一点
       const payUrl = this.sharedPayService
         .getAlipaySdk()
         .pageExecute('alipay.trade.page.pay', 'GET', {
