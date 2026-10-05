@@ -23,6 +23,7 @@
     "marked": "^18.0.14",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^4.7.1",
+    "socket.io-client": "^4.8.4",
     "tailwindcss": "^4.3.3",
     "three": "^0.186.0",
     "vue": "^3.3.11",

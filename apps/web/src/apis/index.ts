@@ -1,14 +1,15 @@
 import axios from "axios";
-import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/user"; //pinia user的
 import router from "@/router"; //路由
 import { refreshTokenApi } from "./auth"; //刷新token接口
+import { ElMessage } from "element-plus"; //引入element-plus的提示框
+export const uploadUrl = import.meta.env.DEV
+  ? "http://127.0.0.1:9100"
+  : "http://线上地址待定";
+export const socketUrl = import.meta.env.DEV
+  ? "http://localhost:3000"
+  : "http://线上地址待定";
 export const timeout = 50000;
-// Avatar paths returned by the server are relative to the object-storage host.
-// Override this for a non-local MinIO deployment with VITE_UPLOAD_URL.
-export const uploadUrl = (
-  import.meta.env.VITE_UPLOAD_URL || "http://127.0.0.1:9100"
-).replace(/\/+$/, "");
 //server服务器接口
 export const serverApi = axios.create({
   baseURL: "/api/v1",
@@ -17,7 +18,6 @@ export const serverApi = axios.create({
 let isRefreshing = false; //是否正在刷新token
 let requestQueue: ((newAccessToken: string) => void)[] = []; //存储失败的请求
 //请求拦截器
-// 每个请求发出前，从 Pinia user store（localStorage 持久化）读 accessToken，自动塞进`Authorization: Bearer xxx` 请求头。
 serverApi.interceptors.request.use((config) => {
   const userStore = useUserStore();
   if (userStore.getAccessToken) {
@@ -26,21 +26,18 @@ serverApi.interceptors.request.use((config) => {
   return config;
 });
 //响应拦截器
-// 响应 ── 2xx → 剥壳 → 业务拿到 { code, data... }
-//      └─ 401 → 刷新调度：合并并发 → refreshServer 换新对 → 自动重放
-//               （refreshServer 自己不带这套逻辑 → 不会死循环）
 serverApi.interceptors.response.use(
   (res) => {
     return res.data;
   },
   async (error) => {
     if (error.code === "ERR_NETWORK") {
-      ElMessage.error("网络错误，请检查网络连接");
+      ElMessage.error("网络连接失败,请重试");
       return Promise.reject(error);
     }
-    if (!error.response || error.response.status !== 401) {
+    if (error.response.status !== 401) {
+      ElMessage.error("服务器异常,请稍后再试");
       //其他code码就直接抛出异常
-      ElMessage.error("服务器异常，请稍后再试");
       return Promise.reject(error);
     }
     //下面的逻辑就是处理401的情况了
@@ -50,10 +47,10 @@ serverApi.interceptors.response.use(
     const originalRequest = error.config; //读取原始请求
     if (!accessToken || !refreshToken) {
       userStore.logout(); //清空user
+      ElMessage.error("登录已过期,请重新登录");
       router.replace("/"); //跳转到首页
       return Promise.reject(error);
     }
-    //如果token正在刷新中的话请求全部入队，等刷新玩统一处理
     if (isRefreshing) {
       return new Promise((resolve) => {
         requestQueue.push((newAccessToken: string) => {
@@ -71,7 +68,7 @@ serverApi.interceptors.response.use(
         userStore.updateToken(newToken.data);
       } else {
         userStore.logout(); //清空user
-        ElMessage.error("登录已过期，请重新登录");
+        ElMessage.error("登录已过期,请重新登录");
         router.replace("/"); //跳转到首页
         return Promise.reject(error);
       }

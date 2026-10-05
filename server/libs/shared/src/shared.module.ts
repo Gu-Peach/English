@@ -5,10 +5,20 @@ import { ResponseModule } from './response/response.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MinioModule } from './minio/minio.module';
-@Global() // 全局模块，可以在任何地方注入
+import { PayModule } from './pay/pay.module';
+
+@Global()
 @Module({
   providers: [SharedService],
-  exports: [SharedService, PrismaModule, ResponseModule, JwtModule, ConfigModule],
+  exports: [
+    SharedService,
+    PrismaModule,
+    ResponseModule,
+    JwtModule,
+    ConfigModule,
+    MinioModule,
+    PayModule,
+  ],
   imports: [
     PrismaModule,
     ResponseModule,
@@ -25,6 +35,7 @@ import { MinioModule } from './minio/minio.module';
       }),
     }),
     MinioModule,
+    PayModule,
   ],
 })
 export class SharedModule {}
