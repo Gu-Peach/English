@@ -6,7 +6,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MinioModule } from './minio/minio.module';
 import { PayModule } from './pay/pay.module';
-
+import { EmailModule } from './email/email.module';
+import { BullModule } from '@nestjs/bullmq';
 @Global()
 @Module({
   providers: [SharedService],
@@ -18,6 +19,7 @@ import { PayModule } from './pay/pay.module';
     ConfigModule,
     MinioModule,
     PayModule,
+    EmailModule,
   ],
   imports: [
     PrismaModule,
@@ -25,6 +27,17 @@ import { PayModule } from './pay/pay.module';
     ConfigModule.forRoot({
       isGlobal: true, //全局配置
       envFilePath: '.env', //环境变量文件
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get('REDIS_HOST'),
+          port: Number(configService.get('REDIS_PORT')),
+          maxRetriesPerRequest: null, //BullMQ 官方要求：阻塞命令不能被 ioredis 自动重试
+        },
+      }),
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -36,6 +49,7 @@ import { PayModule } from './pay/pay.module';
     }),
     MinioModule,
     PayModule,
+    EmailModule,
   ],
 })
 export class SharedModule {}
